@@ -21,6 +21,13 @@ import {
 
 import { useAuthStore } from '@/stores/auth'
 import {
+  createEmptyApplicationFormData,
+  getApplicationFormSchema,
+  isApplicationFormComplete,
+  type StudentApplicationFieldConfig,
+  type StudentApplicationFormData,
+} from '@/data/student-application-form'
+import {
   categoryOptions,
   createCategoryIndexesSnapshot,
   type CategoryId,
@@ -72,13 +79,8 @@ const filteredPublicAttachments = computed(() => {
   return publicAttachments.value.filter((attachment) => attachment.name.includes(searchPublicAttachments.value))
 })
 
-const formData = ref({
-  title: '',
-  description: '',
-  score: '',
-  date: '',
-  location: '',
-})
+const formData = ref<StudentApplicationFormData>(createEmptyApplicationFormData())
+const scoreInput = ref('')
 
 const recentApplications = [
   { id: 1, type: '科技创新竞赛', category: 'intellectual', status: 'approved', date: '2024-03-15', score: '+5.0' },
@@ -96,6 +98,9 @@ const selectedOptions = computed<ScoreOption[]>(() => selectedIndexItem.value?.o
 const selectedScoreOption = computed<ScoreOption | null>(() => {
   return selectedOptions.value.find((option) => option.optionCode === selectedOptionCode.value) || null
 })
+const currentFormSchema = computed(() => {
+  return getApplicationFormSchema(selectedIndexItem.value?.itemCode, selectedOptionCode.value || null)
+})
 
 const autoCalculatedScore = computed<number | null>(() => {
   if (!selectedScoreOption.value) {
@@ -112,10 +117,10 @@ const isCustomScoreMode = computed(() => {
 })
 
 const numericScoreValue = computed<number | null>(() => {
-  if (!formData.value.score) {
+  if (!scoreInput.value) {
     return null
   }
-  const parsed = Number(formData.value.score)
+  const parsed = Number(scoreInput.value)
   return Number.isFinite(parsed) ? parsed : null
 })
 
@@ -135,6 +140,21 @@ const maxPointsWarningMessage = computed(() => {
 })
 
 const isScoreReadOnly = computed(() => Boolean(selectedScoreOption.value && !isCustomScoreMode.value))
+const isSubmitDisabled = computed(() => {
+  if (!selectedIndexItem.value) {
+    return true
+  }
+
+  if (!isApplicationFormComplete(currentFormSchema.value, formData.value)) {
+    return true
+  }
+
+  if (isCustomScoreMode.value && !scoreInput.value.trim()) {
+    return true
+  }
+
+  return isSubmitting.value
+})
 
 watch(currentIndexes, (indexes) => {
   if (!indexes.length) {
@@ -157,16 +177,28 @@ watch(selectedIndexItem, (item) => {
   }
 }, { immediate: true })
 
+watch(selectedIndexCode, () => {
+  formData.value = createEmptyApplicationFormData()
+  scoreInput.value = ''
+})
+
 watch([selectedScoreOption, autoCalculatedScore], ([option, autoScore]) => {
   if (!option) {
     return
   }
   if (option.allowCustomPoints && option.points === null) {
-    formData.value.score = ''
+    scoreInput.value = ''
     return
   }
-  formData.value.score = autoScore === null ? '' : String(autoScore)
+  scoreInput.value = autoScore === null ? '' : String(autoScore)
 }, { immediate: true })
+
+const getFieldPlaceholder = (field: StudentApplicationFieldConfig) => {
+  if (field.placeholder) {
+    return field.placeholder
+  }
+  return `请输入${field.label}`
+}
 
 const getCategoryIcon = (category: string) => {
   if (category === 'moral') return Heart
@@ -243,7 +275,7 @@ const closePublicAttachmentsModal = () => {
 }
 
 const handleSubmit = async () => {
-  if (!formData.value.title || !formData.value.description) {
+  if (isSubmitDisabled.value) {
     return
   }
 
@@ -254,13 +286,8 @@ const handleSubmit = async () => {
 
   setTimeout(() => {
     submitSuccess.value = false
-    formData.value = {
-      title: '',
-      description: '',
-      score: '',
-      date: '',
-      location: '',
-    }
+    formData.value = createEmptyApplicationFormData()
+    scoreInput.value = ''
     selectedFiles.value = []
     selectedPublicAttachments.value = []
   }, 2200)
@@ -388,33 +415,37 @@ const handleSubmit = async () => {
             </div>
           </div>
 
+          <div class="mb-4 rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+            {{ currentFormSchema.summary }}
+          </div>
+
           <div class="grid grid-cols-2 gap-6">
-            <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700">申请标题 <span class="text-red-500">*</span></label>
+            <div
+              v-for="field in currentFormSchema.fields"
+              :key="field.key"
+              :class="field.span === 'full' ? 'col-span-2' : ''"
+            >
+              <label class="mb-2 block text-sm font-medium text-gray-700">
+                {{ field.label }}
+                <span v-if="field.required" class="text-red-500">*</span>
+              </label>
               <input
-                v-model="formData.title"
-                type="text"
-                :placeholder="selectedIndexItem ? `请输入${selectedIndexItem.title}申请标题` : '请输入申请标题'"
+                v-if="field.type !== 'textarea'"
+                v-model="formData[field.key]"
+                :type="field.type"
+                :placeholder="getFieldPlaceholder(field)"
                 class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <textarea
+                v-else
+                v-model="formData[field.key]"
+                :rows="field.rows || 4"
+                :placeholder="getFieldPlaceholder(field)"
+                class="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+              ></textarea>
+              <p v-if="field.helperText" class="mt-2 text-xs text-amber-600">{{ field.helperText }}</p>
             </div>
-            <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700">申请日期</label>
-              <input
-                v-model="formData.date"
-                type="date"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700">申请地点</label>
-              <input
-                v-model="formData.location"
-                type="text"
-                placeholder="请输入活动地点"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+
             <div>
               <label class="mb-2 block text-sm font-medium text-gray-700">评分标准选项</label>
               <select
@@ -433,7 +464,7 @@ const handleSubmit = async () => {
             <div>
               <label class="mb-2 block text-sm font-medium text-gray-700">申请分数</label>
               <input
-                v-model="formData.score"
+                v-model="scoreInput"
                 type="number"
                 :readonly="isScoreReadOnly"
                 :placeholder="selectedIndexItem ? `请填写${selectedIndexItem.title}申请分数` : '请输入申请分数'"
@@ -458,15 +489,6 @@ const handleSubmit = async () => {
             </div>
           </div>
 
-          <div class="mt-6">
-            <label class="mb-2 block text-sm font-medium text-gray-700">申请描述 <span class="text-red-500">*</span></label>
-            <textarea
-              v-model="formData.description"
-              rows="4"
-              placeholder="请详细描述申请内容，包括活动时间、参与情况、取得成果等"
-              class="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-            ></textarea>
-          </div>
         </div>
 
         <div class="card-shadow rounded-2xl bg-white p-6">
@@ -520,7 +542,7 @@ const handleSubmit = async () => {
           <button class="rounded-xl px-6 py-3 font-medium text-gray-600 transition-all hover:bg-gray-100">保存草稿</button>
           <button
             class="bg-gradient-primary flex items-center gap-2 rounded-xl px-6 py-3 font-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="isSubmitting || !formData.title || !formData.description"
+            :disabled="isSubmitDisabled"
             @click="handleSubmit"
           >
             <span v-if="isSubmitting" class="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></span>

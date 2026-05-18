@@ -76,17 +76,19 @@ const getStatusText = (status: ApplicationRecord['status']) => {
       <section class="surface-card">
         <div class="card-header">
           <div>
-            <h3 class="card-title">成绩报告</h3>
-            <p class="card-subtitle">保留旧页面的报告生成区入口</p>
+            <h3 class="card-title">近一周学生申请数据变化</h3>
+            <p class="card-subtitle">原图表区域先保留为内容占位，后续接真实图表组件</p>
           </div>
-          <button type="button" class="secondary-button">生成所有</button>
+          <div class="tab-group">
+            <button type="button" class="tab-button is-active">全部</button>
+            <button type="button" class="tab-button">智育</button>
+            <button type="button" class="tab-button">体育美育</button>
+            <button type="button" class="tab-button">劳育</button>
+          </div>
         </div>
-        <div class="report-grid">
-          <article v-for="report in reportStatus" :key="report.label" class="report-card">
-            <p class="report-title">{{ report.label }}</p>
-            <p class="report-state" :data-ready="report.ready">{{ report.ready ? '已生成，可下载' : '待生成' }}</p>
-            <button type="button" class="text-button">{{ report.ready ? '下载报告' : '立即生成' }}</button>
-          </article>
+        <div class="chart-placeholder">
+          <p>申请数据趋势可视化区域</p>
+          <span>保留旧页面的信息层级，不复制旧顶部壳代码</span>
         </div>
       </section>
 
@@ -109,19 +111,17 @@ const getStatusText = (status: ApplicationRecord['status']) => {
     <section class="surface-card">
       <div class="card-header">
         <div>
-          <h3 class="card-title">近一周学生申请数据变化</h3>
-          <p class="card-subtitle">原图表区域先保留为内容占位，后续接真实图表组件</p>
+          <h3 class="card-title">成绩报告</h3>
+          <p class="card-subtitle">保留旧页面的报告生成区入口</p>
         </div>
-        <div class="tab-group">
-          <button type="button" class="tab-button is-active">全部</button>
-          <button type="button" class="tab-button">智育</button>
-          <button type="button" class="tab-button">体育美育</button>
-          <button type="button" class="tab-button">劳育</button>
-        </div>
+        <button type="button" class="secondary-button">生成所有</button>
       </div>
-      <div class="chart-placeholder">
-        <p>申请数据趋势可视化区域</p>
-        <span>保留旧页面的信息层级，不复制旧顶部壳代码</span>
+      <div class="report-grid">
+        <article v-for="report in reportStatus" :key="report.label" class="report-card">
+          <p class="report-title">{{ report.label }}</p>
+          <p class="report-state" :data-ready="report.ready">{{ report.ready ? '已生成，可下载' : '待生成' }}</p>
+          <button type="button" class="text-button">{{ report.ready ? '下载报告' : '立即生成' }}</button>
+        </article>
       </div>
     </section>
 

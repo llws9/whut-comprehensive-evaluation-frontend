@@ -7,5 +7,8 @@
     "dev:student": "corepack pnpm --filter @whut/student dev",
     "build": "corepack pnpm -r build",
     "lint:types": "corepack pnpm --filter @whut/manage exec vue-tsc -b && corepack pnpm --filter @whut/student exec vue-tsc -b"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.6"
   }
 }
