@@ -1,0 +1,11 @@
+{
+  "name": "whut-comprehensive-evaluation-frontend",
+  "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "dev:manage": "corepack pnpm --filter @whut/manage dev",
+    "dev:student": "corepack pnpm --filter @whut/student dev",
+    "build": "corepack pnpm -r build",
+    "lint:types": "corepack pnpm --filter @whut/manage exec vue-tsc -b && corepack pnpm --filter @whut/student exec vue-tsc -b"
+  }
+}
