@@ -20,7 +20,7 @@ export const manageMenus: MenuItem[] = [
     key: 'students',
     label: '学生管理',
     path: '/admin/students',
-    permissionCode: 'manage.students.view',
+    permissionCode: 'user.manage',
     breadcrumb: ['管理端', '学生管理']
   },
   {
