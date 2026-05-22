@@ -8,6 +8,7 @@ export type UserSession = {
   permissionCodes: string[]
   accessToken: string
   refreshToken?: string
+  hydratedFromServer?: boolean
 }
 
 const isStringArray = (value: unknown): value is string[] =>
@@ -32,6 +33,7 @@ export const isUserSession = (value: unknown): value is UserSession => {
     isStringArray(session.permissionCodes) &&
     typeof session.accessToken === 'string' &&
     session.accessToken.length > 0 &&
-    (session.refreshToken === undefined || typeof session.refreshToken === 'string')
+    (session.refreshToken === undefined || typeof session.refreshToken === 'string') &&
+    (session.hydratedFromServer === undefined || typeof session.hydratedFromServer === 'boolean')
   )
 }

@@ -12,6 +12,7 @@ const username = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const isLoading = ref(false)
+const errorMessage = ref('')
 const canSubmit = computed(() => username.value.trim().length > 0 && password.value.trim().length > 0)
 
 const handleLogin = async () => {
@@ -20,17 +21,21 @@ const handleLogin = async () => {
   }
 
   isLoading.value = true
-  authStore.loginWithMockSession()
+  errorMessage.value = ''
 
   const redirectPath =
     typeof route.query.redirect === 'string' && route.query.redirect.length > 0
       ? route.query.redirect
       : undefined
 
-  window.setTimeout(() => {
+  try {
+    await authStore.login(username.value.trim(), password.value)
+    await router.push(redirectPath ?? { name: 'AdminDashboard' })
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '登录失败，请稍后重试'
+  } finally {
     isLoading.value = false
-    void router.push(redirectPath ?? { name: 'AdminDashboard' })
-  }, 600)
+  }
 }
 </script>
 
@@ -86,6 +91,8 @@ const handleLogin = async () => {
           </label>
           <button type="button" class="text-button">忘记密码？</button>
         </div>
+
+        <p v-if="errorMessage" class="auth-error-message">{{ errorMessage }}</p>
 
         <div class="auth-actions">
           <button type="submit" class="primary-button" :disabled="!canSubmit || isLoading">

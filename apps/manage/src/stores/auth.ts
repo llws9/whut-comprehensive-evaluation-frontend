@@ -1,11 +1,10 @@
-import { isUserSession, manageMenus, type UserSession } from '@whut/shared'
+import { isUserSession, type UserSession } from '@whut/shared'
 import { defineStore } from 'pinia'
 
-const STORAGE_KEY = 'whut.manage.session'
+import { getCurrentUser, login as loginApi, logout as logoutApi, type ManageCurrentUser, type ManageTokenPair } from '@/api/auth'
 
-const managePermissionCodes = manageMenus
-  .map((item) => item.permissionCode)
-  .filter((permissionCode): permissionCode is string => Boolean(permissionCode))
+const STORAGE_KEY = 'whut.manage.session'
+let hydratePromise: Promise<void> | null = null
 
 const readStoredSession = (): UserSession | null => {
   if (typeof window === 'undefined') {
@@ -46,14 +45,18 @@ const persistSession = (session: UserSession | null) => {
   window.localStorage.removeItem(STORAGE_KEY)
 }
 
-const createMockManageSession = (): UserSession => ({
-  userId: 'mock-admin-001',
-  userName: '综合测评管理员',
+const createSessionFromServerState = (
+  tokenPair: ManageTokenPair,
+  currentUser: ManageCurrentUser
+): UserSession => ({
+  userId: currentUser.userId,
+  userName: currentUser.userName,
   appScope: 'manage',
-  roles: ['admin'],
-  permissionCodes: [...managePermissionCodes],
-  accessToken: 'mock-manage-access-token',
-  refreshToken: 'mock-manage-refresh-token'
+  roles: currentUser.roles,
+  permissionCodes: currentUser.permissionCodes,
+  accessToken: tokenPair.accessToken,
+  refreshToken: tokenPair.refreshToken,
+  hydratedFromServer: true
 })
 
 type AuthState = {
@@ -71,26 +74,71 @@ export const useAuthStore = defineStore('manage-auth', {
     appScope: (state) => state.session?.appScope ?? null
   },
   actions: {
-    hydrate() {
+    async hydrate() {
       if (this.hydrated) {
         return
       }
 
-      this.session = readStoredSession()
-      this.hydrated = true
+      if (hydratePromise) {
+        await hydratePromise
+        return
+      }
+
+      hydratePromise = (async () => {
+        const storedSession = readStoredSession()
+
+        if (!storedSession?.accessToken) {
+          this.setSession(null)
+          return
+        }
+
+        try {
+          const currentUser = await getCurrentUser(storedSession.accessToken)
+          this.setSession(
+            createSessionFromServerState(
+              {
+                accessToken: storedSession.accessToken,
+                refreshToken: storedSession.refreshToken
+              },
+              currentUser
+            )
+          )
+        } catch {
+          this.clearInvalidSession()
+        }
+      })()
+
+      try {
+        await hydratePromise
+      } finally {
+        hydratePromise = null
+      }
     },
     setSession(session: UserSession | null) {
       this.session = session
       this.hydrated = true
       persistSession(session)
     },
-    loginWithMockSession() {
-      const session = createMockManageSession()
+    async login(credential: string, password: string) {
+      const tokenPair = await loginApi({
+        credential,
+        password
+      })
+      const currentUser = await getCurrentUser(tokenPair.accessToken)
+      const session = createSessionFromServerState(tokenPair, currentUser)
+
       this.setSession(session)
       return session
     },
-    logout() {
-      this.setSession(null)
+    async logout() {
+      try {
+        if (this.session?.accessToken) {
+          await logoutApi(this.session.accessToken)
+        }
+      } catch {
+      } finally {
+        this.setSession(null)
+      }
     },
     clearInvalidSession() {
       this.setSession(null)

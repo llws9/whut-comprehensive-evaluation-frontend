@@ -11,9 +11,9 @@ const router = createRouter({
   routes: manageRoutes
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const authStore = useAuthStore()
-  authStore.hydrate()
+  await authStore.hydrate()
 
   if (typeof document !== 'undefined') {
     document.title = to.meta.title ? `WHUT Manage | ${String(to.meta.title)}` : 'WHUT Manage'

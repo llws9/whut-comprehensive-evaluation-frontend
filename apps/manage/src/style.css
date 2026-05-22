@@ -641,6 +641,16 @@ body {
   gap: 18px;
 }
 
+.auth-error-message {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(248, 113, 113, 0.16);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #fecaca;
+  font-size: 14px;
+}
+
 .login-options,
 .checkbox-field {
   display: flex;

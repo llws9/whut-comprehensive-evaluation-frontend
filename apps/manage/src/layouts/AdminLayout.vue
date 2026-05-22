@@ -26,7 +26,7 @@ const navigateTo = async (path: string) => {
 }
 
 const handleLogout = async () => {
-  authStore.logout()
+  await authStore.logout()
   await router.push({ name: 'AdminLogin' })
 }
 </script>
