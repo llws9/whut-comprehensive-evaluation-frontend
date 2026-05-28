@@ -45,11 +45,11 @@ export const manageMenus: MenuItem[] = [
     breadcrumb: ['管理端', '奖学金资格']
   },
   {
-    key: 'permissions',
-    label: '权限管理',
-    path: '/admin/permissions',
-    permissionCode: 'manage.permissions.view',
-    breadcrumb: ['管理端', '权限管理']
+    key: 'roles',
+    label: '角色模板',
+    path: '/admin/roles',
+    permissionCode: 'role.manage',
+    breadcrumb: ['管理端', '角色模板']
   },
   {
     key: 'settings',

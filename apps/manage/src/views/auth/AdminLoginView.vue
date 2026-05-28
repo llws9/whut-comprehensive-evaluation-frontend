@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
+import { resolveManagePostLoginTarget } from './post-login-redirect'
 
 const authStore = useAuthStore()
 const route = useRoute()
@@ -29,8 +30,13 @@ const handleLogin = async () => {
       : undefined
 
   try {
-    await authStore.login(username.value.trim(), password.value)
-    await router.push(redirectPath ?? { name: 'AdminDashboard' })
+    const session = await authStore.login(username.value.trim(), password.value)
+    await router.push(
+      resolveManagePostLoginTarget({
+        redirectPath,
+        permissionCodes: session.permissionCodes
+      })
+    )
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '登录失败，请稍后重试'
   } finally {

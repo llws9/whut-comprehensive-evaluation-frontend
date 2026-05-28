@@ -50,7 +50,7 @@ corepack pnpm lint:types
 - `/admin/grades`
 - `/admin/review`
 - `/admin/scholarship`
-- `/admin/permissions`
+- `/admin/roles`
 - `/admin/settings`
 
 ## 页面组成
@@ -60,7 +60,7 @@ corepack pnpm lint:types
 - `grades`: 成绩管理
 - `review`: 审核工作流
 - `scholarship`: 奖学金资格检查
-- `permissions`: 权限管理
+- `roles`: 角色模板管理
 - `settings`: 系统设置
 
 ## 实现约定

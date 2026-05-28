@@ -77,10 +77,14 @@ export const manageRoutes: RouteRecordRaw[] = [
         meta: withMeta(buildMenuRouteMeta('manage', 'admin', getManageMenu('scholarship')))
       },
       {
-        path: getRelativeRoutePath(getManageMenu('permissions').path, '/admin/'),
-        name: 'AdminPermissions',
-        component: () => import('@/views/permissions/PermissionsView.vue'),
-        meta: withMeta(buildMenuRouteMeta('manage', 'admin', getManageMenu('permissions')))
+        path: getRelativeRoutePath(getManageMenu('roles').path, '/admin/'),
+        name: 'AdminRoleTemplates',
+        component: () => import('@/views/roles/RoleTemplatesView.vue'),
+        meta: withMeta(buildMenuRouteMeta('manage', 'admin', getManageMenu('roles')))
+      },
+      {
+        path: 'permissions',
+        redirect: { name: 'AdminRoleTemplates' }
       },
       {
         path: getRelativeRoutePath(getManageMenu('settings').path, '/admin/'),
